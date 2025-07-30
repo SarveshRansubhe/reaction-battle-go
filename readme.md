@@ -1,4 +1,4 @@
-Postgres
+SQLite
 
-Use Postgres 17 
+Use SQLite 3.50.3 
 Create reactionbattledb database
