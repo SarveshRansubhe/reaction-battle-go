@@ -19,16 +19,16 @@ var DB *sql.DB
 
 func initDB() {
 	var err error
-	DB, err = sql.Open("sqlite3", "/home/smartship/development/weareass/noon-report.db")
+	DB, err = sql.Open("sqlite3", "reaction-battle-database.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	sqlStmt := `
- CREATE TABLE IF NOT EXISTS todos (
-  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  title TEXT
- );`
+		CREATE TABLE IF NOT EXISTS todos (
+		id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+		title TEXT
+	);`
 
 	_, err = DB.Exec(sqlStmt)
 	if err != nil {
