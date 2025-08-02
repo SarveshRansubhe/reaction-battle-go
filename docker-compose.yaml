@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  app:
+    image: "golang:latest"
+    working_dir: /go/src/app
+    ports:
+      - "8000:8080"
+    volumes:
+      - .:/go/src/app
+    command: tail -f /dev/null
+    container_name: reaction_battle_container
