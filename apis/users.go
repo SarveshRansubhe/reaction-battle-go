@@ -33,7 +33,7 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	var userJsonList []UserJson
+	var userJsonList []UserJson = []UserJson{}
 
 	for _, u := range users {
 		r := UserJson{
