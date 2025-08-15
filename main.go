@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"app/apis"
+	"app/sql/datastore"
 )
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -28,8 +29,9 @@ func connectPostgres() {
 	}
 
 	fmt.Println("Connected to db", conn.Config().Database)
-	defer conn.Close(context.Background())
-	defer fmt.Println("Disconnected from Postgres")
+	apis.Queries = datastore.New(conn)
+	// defer conn.Close(context.Background())
+	// defer fmt.Println("Disconnected from Postgres")
 }
 
 func main() {
@@ -38,9 +40,10 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/sdf", apis.CreateUser)
+	http.HandleFunc("/getUsers", apis.GetUsers)
+	http.HandleFunc("/*", http.NotFound)
 
-	defer connectPostgres()
+	connectPostgres()
 
 	fmt.Println("Server is running at http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
