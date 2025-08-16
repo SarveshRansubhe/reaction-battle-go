@@ -8,7 +8,7 @@ import (
 )
 
 type countHandler struct {
-	mu sync.Mutex // guards n
+	mu sync.Mutex
 	n  int
 }
 

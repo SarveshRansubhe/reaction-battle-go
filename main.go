@@ -40,7 +40,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/getUsers", apis.GetUsers)
+	http.HandleFunc("/user", apis.UserApi)
 	http.HandleFunc("/*", http.NotFound)
 
 	connectPostgres()

@@ -7,7 +7,53 @@ package datastore
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO public.users(
+	username, email, password_hash, first_name, last_name, created_at, updated_at, is_active)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING id, username, email, password_hash, first_name, last_name, created_at, updated_at, is_active
+`
+
+type CreateUserParams struct {
+	Username     string
+	Email        string
+	PasswordHash string
+	FirstName    pgtype.Text
+	LastName     pgtype.Text
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	IsActive     pgtype.Bool
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser,
+		arg.Username,
+		arg.Email,
+		arg.PasswordHash,
+		arg.FirstName,
+		arg.LastName,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.IsActive,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.FirstName,
+		&i.LastName,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsActive,
+	)
+	return i, err
+}
 
 const getAllUsers = `-- name: GetAllUsers :many
 SELECT id, username, email, password_hash, first_name, last_name, created_at, updated_at, is_active FROM public.users
