@@ -11,6 +11,28 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const checkDuplicateEmail = `-- name: CheckDuplicateEmail :one
+SELECT Count(*) from public.users where email = $1
+`
+
+func (q *Queries) CheckDuplicateEmail(ctx context.Context, email string) (int64, error) {
+	row := q.db.QueryRow(ctx, checkDuplicateEmail, email)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const checkDuplicateUsername = `-- name: CheckDuplicateUsername :one
+SELECT Count(*) from public.users where username = $1
+`
+
+func (q *Queries) CheckDuplicateUsername(ctx context.Context, username string) (int64, error) {
+	row := q.db.QueryRow(ctx, checkDuplicateUsername, username)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO public.users(
 	username, email, password_hash, first_name, last_name, created_at, updated_at, is_active)

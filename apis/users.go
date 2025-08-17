@@ -28,30 +28,32 @@ type UsersResponse struct {
 	Count     int        `json:"count"`
 }
 
+type ErrorResponse struct {
+	Message    string `json:"message"`
+	Stacktrace string `json:"stacktrace"`
+}
+
 func UserApi(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		GetUsers(w, r)
-
 	case http.MethodPost:
 		CreateUser(w, r)
 
 	default:
-		log.Printf("Method not implemented")
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-
 	users, err := Queries.GetAllUsers(ctx)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
 	}
-
 	var userJsonList []UserJson = []UserJson{}
-
 	for _, u := range users {
 		r := UserJson{
 			ID:        u.ID,
@@ -65,31 +67,41 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 		}
 		userJsonList = append(userJsonList, r)
 	}
-
 	response := UsersResponse{
 		UsersJson: userJsonList,
 		Count:     len(users),
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Printf("Error encoding JSON: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
-
 	var arg UserJson
-
 	err := json.NewDecoder(r.Body).Decode(&arg)
 	if err != nil {
 		log.Println(err)
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
-
+	if usernameDup, err := Queries.CheckDuplicateUsername(ctx, arg.Username); err != nil {
+		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	} else if usernameDup > 0 {
+		http.Error(w, "Username already exists", http.StatusConflict)
+		return
+	}
+	if emailDup, err := Queries.CheckDuplicateEmail(ctx, arg.Email); err != nil {
+		log.Println(err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	} else if emailDup > 0 {
+		http.Error(w, "Email already exists", http.StatusConflict)
+		return
+	}
 	u, err := Queries.CreateUser(ctx, datastore.CreateUserParams{
 		Username:     arg.Username,
 		Email:        arg.Email,
@@ -102,14 +114,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
-
-	// Validations
-	// if(u.Username == ni)
-
 	returnUser := UserJson{
+		ID:        u.ID,
 		Username:  u.Username,
 		Email:     u.Email,
 		FirstName: u.FirstName,
@@ -118,12 +127,10 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt: u.UpdatedAt,
 		IsActive:  u.IsActive,
 	}
-
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(returnUser); err != nil {
 		log.Printf("Error encoding JSON: %v", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
 }
 
